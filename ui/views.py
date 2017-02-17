@@ -1,33 +1,42 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.views import generic
+from django.core.cache import cache
 
 import json
 import httplib
 
 from .models import Movie, Booking, ShowTime, User
 
-def get_data_from_response(response):
-    # check that we either got a successful response (200) or a previously retrieved,
-    # but still valid response (304)
-    status = response.status
-    if status == 200 or status == 304:
-        body = json.loads(response.read())
-        data = body[u'data']
-        return data
-    else:
-        print 'Error status code: ', status
-        return None
-    return
-
 def get_remote_data(model, id):
-    # Connect to the bookings endpoint
-    conn = httplib.HTTPConnection('{}.dev'.format(model))
+    # Check the cache first
+    cached = cache.get(id)
+    if cached is None:
+        print "Cache miss: ", id
 
-    # Get a json response back
-    conn.request("GET", '/{}/{}'.format(model, id), headers={'accept':'application/json'})
-    data = get_data_from_response(conn.getresponse())
-    return data
+        # Connect to the bookings endpoint
+        conn = httplib.HTTPConnection('{}.dev'.format(model))
+
+        # Get a json response back
+        conn.request("GET", '/{}/{}'.format(model, id), headers={'accept':'application/json'})
+        response = conn.getresponse()
+
+        # check that we either got a successful response (200) or a previously retrieved,
+        # but still valid response (304)
+        status = response.status
+        if status == 200 or status == 304:
+            body = json.loads(response.read())
+            data = body[u'data']
+            cache.set(id, data)
+            return data
+        else:
+            print 'Error status code: {} loading {} with id {}'.format(status, model, id)
+            return None
+        return
+    else:
+        print "Cache hit: ", id
+        return cached
+
 
 def get_movie(id):
     movie = Movie()
@@ -66,8 +75,6 @@ def get_showtime(id):
     else:
         showtime.date = "Unable to load, see logs"
 
-
-
     return showtime
 
 def get_user(id):
@@ -103,26 +110,35 @@ def get_booking(id):
 
     return booking
 
+
 class IndexView(generic.ListView):
     template_name = 'ui/index.html'
     context_object_name = 'booking_list'
 
     def get_queryset(self):
-        """
-        Call the webservice to get results
-        TODO use redis to cache
-        """
         # Connect to the bookings endpoint
         conn = httplib.HTTPConnection("bookings.dev")
 
         # Get a json response back
         conn.request("GET", "/bookings", headers={'accept':'application/json'})
-        data = get_data_from_response(conn.getresponse())
-        bookings = []
-        for b in data:
-            bookings.append(get_booking(b[u'id']))
-        bookings =sorted(bookings, key=lambda b: b.showtime.date)
-        return bookings
+        response = conn.getresponse()
+
+        # check that we either got a successful response (200) or a previously retrieved,
+        # but still valid response (304)
+        status = response.status
+        if status == 200 or status == 304:
+            # Build a dict out of the json response
+            body = json.loads(response.read())
+            # Load each of the bookings (movies, showtime and user)
+            bookings = []
+            for b in body[u'data']:
+                bookings.append(get_booking(b[u'id']))
+            # sort the bookings based on the date
+            bookings = sorted(bookings, key=lambda b: b.showtime.date)
+            return bookings
+        else:
+            print 'Error status code: {} loading /bookings'.Format(status)
+            return None
 
 class UserView(generic.DetailView):
     context_object_name = 'user'
@@ -130,6 +146,7 @@ class UserView(generic.DetailView):
 
     def get_object(self):
         return get_user(self.args[0])
+
 
 class ShowtimeView(generic.DetailView):
     context_object_name = 'showtime'
