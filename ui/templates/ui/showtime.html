@@ -11,8 +11,8 @@
   	<li>Created On: {{ showtime.createdon }}</li>
 		<li>Movies:</li>
 		<ul>
-		{% for movie in shotime.movies %}
-				<li><a class="navlink" href="/movie/{{ movie.id }}">{{ movie.title}} - {{movie.rating}}</a></li>
+		{% for movie in showtime.movies %}
+				<li><a href="/movie/{{ movie.id }}">{{ movie.title}} - {{movie.rating}}</a></li>
 		{% endfor %}
 		</ul>
 	</ul>

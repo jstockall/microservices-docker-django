@@ -8,12 +8,12 @@
   <h1>Booking</h1>
   <ul>
   	<li>Id: {{ booking.id }}</li>
-    <li>User: {{ booking.user }}</li>
-    <li>Showtime: {{ booking.showtime }}</li>
+    <li>User: <a href="/user/{{ booking.user.id }}">{{ booking.user }}</a></li>
+    <li>Showtime: <a href="/showtime/{{ booking.showtime.id }}">{{ booking.showtime }}</a></li>
     <li>Movies:</li>
     <ul>
     {% for movie in booking.movies %}
-        <li><a class="navlink" href="/movie/{{ movie.id }}">{{ movie.title}} - {{movie.rating}}</a></li>
+        <li><a href="/movie/{{ movie.id }}">{{ movie.title}} - {{movie.rating}}</a></li>
     {% endfor %}
     </ul>
   </ul>
