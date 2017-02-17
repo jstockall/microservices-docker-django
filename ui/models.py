@@ -10,7 +10,7 @@ class Booking():
     showtime = ""
     movies = []
     def __str__(self):
-		return u'{} {}'.format(self.user, self.showtime)
+		return self.showtime
 
 @python_2_unicode_compatible
 class Movie():

@@ -84,6 +84,25 @@ def get_user(id):
 
     return user
 
+def get_booking(id):
+    booking = Booking()
+    booking.id = id
+    booking.movies = []
+
+    # Load the booking
+    bookingJson = get_remote_data("bookings", id)
+
+    # Load the showtimes
+    booking.showtime = get_showtime(bookingJson[u'showtimeid'])
+
+    # Load the user
+    booking.user = get_user(bookingJson[u'userid'])
+
+    # Load the movies
+    booking.movies = get_movies(bookingJson[u'movies'])
+
+    return booking
+
 class IndexView(generic.ListView):
     template_name = 'ui/index.html'
     context_object_name = 'booking_list'
@@ -99,7 +118,11 @@ class IndexView(generic.ListView):
         # Get a json response back
         conn.request("GET", "/bookings", headers={'accept':'application/json'})
         data = get_data_from_response(conn.getresponse())
-        return data
+        bookings = []
+        for b in data:
+            bookings.append(get_booking(b[u'id']))
+        bookings =sorted(bookings, key=lambda b: b.showtime.date)
+        return bookings
 
 class UserView(generic.DetailView):
     context_object_name = 'user'
@@ -121,25 +144,7 @@ class BookingView(generic.DetailView):
     template_name = 'ui/booking.html'
 
     def get_object(self):
-        id = self.args[0]
-
-        booking = Booking()
-        booking.id = id
-        booking.movies = []
-
-        # Load the booking
-        bookingJson = get_remote_data("bookings", id)
-
-        # Load the showtimes
-        booking.showtime = get_showtime(bookingJson[u'showtimeid'])
-
-        # Load the user
-        booking.user = get_user(bookingJson[u'userid'])
-
-        # Load the movies
-        booking.movies = get_movies(bookingJson[u'movies'])
-
-        return booking
+        return get_booking(self.args[0])
 
 
 class MovieView(generic.DetailView):
