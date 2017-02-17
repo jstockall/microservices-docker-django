@@ -1,0 +1,16 @@
+{% load static %}
+
+<link rel="stylesheet" type="text/css" href="{% static 'ui/style.css' %}" />
+
+
+<div class="content">
+
+	<h1>Movie</h1>
+  <ul>
+  	<li>Id: {{ movie.id }}</li>
+  	<li>Title: {{ movie.title }}</li>
+  	<li>Director: {{ movie.director }}</li>
+  	<li>Rating: {{ movie.rating }}</li>
+	</ul>
+
+</div>

@@ -1,0 +1,17 @@
+{% load static %}
+
+<link rel="stylesheet" type="text/css" href="{% static 'ui/style.css' %}" />
+
+
+<div class="content">
+
+  {% if booking_list %}
+      <ul>
+      {% for booking in booking_list %}
+          <li><a class="navlink" href="/booking/{{ booking.id }}">{{ booking.id }} -- {{ booking.showtimeid }}</a></li>
+      {% endfor %}
+      </ul>
+  {% else %}
+      <p>No bookings are available.</p>
+  {% endif %}
+</div>

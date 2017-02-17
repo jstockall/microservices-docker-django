@@ -1,0 +1,20 @@
+* {
+	font-family: sans-serif;
+}
+
+li a {
+    color: green;
+}
+
+body {
+    background: white url("background.jpg") no-repeat center top;
+}
+
+.content {
+	margin: 400px auto 0 auto;
+	width: 50%;
+}
+
+.navlink {
+	display:block;
+}
