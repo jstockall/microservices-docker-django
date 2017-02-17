@@ -5,3 +5,6 @@ which was forked from [mmorejon/microservices-docker-go-mongodb](https://github.
 * Written in Python using Django framework
 * Packaged with docker-compose
 * Uses Redis to cache results from backend REST apis
+
+# Services Diagram
+![services diagram](https://github.com/jstockall/microservices-docker-django/blob/master/microservices-docker-django.png)
