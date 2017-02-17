@@ -12,7 +12,7 @@ def get_remote_data(model, id):
     # Check the cache first
     cached = cache.get(id)
     if cached is None:
-        print "Cache miss: ", id
+        #print "Cache miss: ", id
 
         # Connect to the bookings endpoint
         conn = httplib.HTTPConnection('{}.dev'.format(model))
@@ -34,7 +34,7 @@ def get_remote_data(model, id):
             return None
         return
     else:
-        print "Cache hit: ", id
+        #print "Cache hit: ", id
         return cached
 
 
@@ -137,7 +137,7 @@ class IndexView(generic.ListView):
             bookings = sorted(bookings, key=lambda b: b.showtime.date)
             return bookings
         else:
-            print 'Error status code: {} loading /bookings'.Format(status)
+            print 'Error status code: {} loading /bookings'.format(status)
             return None
 
 class UserView(generic.DetailView):

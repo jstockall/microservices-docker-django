@@ -1,0 +1,20 @@
+version: '2'
+services:
+  redis:
+    image: redis
+  web:
+    build:
+        context: .
+        dockerfile: Dockerfile
+    image: stockallj/microservices-docker-django:latest
+    ports:
+      - "8000:80"
+    volumes:
+      - .:/code
+    depends_on:
+      - redis
+    extra_hosts:
+      - "movies.dev:10.10.11.106"
+      - "bookings.dev:10.10.11.106"
+      - "users.dev:10.10.11.106"
+      - "showtimes.dev:10.10.11.106"
