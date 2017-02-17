@@ -6,7 +6,7 @@ services:
     build:
         context: .
         dockerfile: Dockerfile
-    image: stockallj/microservices-docker-django:latest
+    image: stockallj/cinema-ui
     container_name: cinema-ui
     ports:
       - "8000:80"
