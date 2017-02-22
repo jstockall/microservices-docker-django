@@ -14,8 +14,11 @@ services:
       - .:/code
     depends_on:
       - redis
+    environment:
+      DOMAIN_SUFFIX: .dev
     extra_hosts:
-      - "movies.dev:10.10.11.106"
-      - "bookings.dev:10.10.11.106"
-      - "users.dev:10.10.11.106"
-      - "showtimes.dev:10.10.11.106"
+      # Set these to your docker host
+      - "movies.dev:172.20.0.1"
+      - "bookings.dev:172.20.0.1"
+      - "users.dev:172.20.0.1"
+      - "showtimes.dev:172.20.0.1"
