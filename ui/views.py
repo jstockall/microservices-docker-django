@@ -5,6 +5,7 @@ from django.core.cache import cache
 
 import json
 import httplib
+import os
 
 from .models import Movie, Booking, ShowTime, User
 
@@ -14,8 +15,13 @@ def get_remote_data(model, id):
     if cached is None:
         #print "Cache miss: ", id
 
-        # Connect to the bookings endpoint
-        conn = httplib.HTTPConnection('{}.dev'.format(model))
+        # Connect to the model endpoint
+        suffix = os.environ.get('DOMAIN_SUFFIX')
+        if suffix is None:
+            suffix = ''
+        url = '{}{}'.format(model, suffix)
+        print "Connecting to", url
+        conn = httplib.HTTPConnection(url)
 
         # Get a json response back
         conn.request("GET", '/{}/{}'.format(model, id), headers={'accept':'application/json'})
@@ -117,7 +123,12 @@ class IndexView(generic.ListView):
 
     def get_queryset(self):
         # Connect to the bookings endpoint
-        conn = httplib.HTTPConnection("bookings.dev")
+        suffix = os.environ.get('DOMAIN_SUFFIX')
+        if suffix is None:
+            suffix = ''
+        url = 'bookings{}'.format(suffix)
+        print "Connecting to", url
+        conn = httplib.HTTPConnection(url)
 
         # Get a json response back
         conn.request("GET", "/bookings", headers={'accept':'application/json'})
