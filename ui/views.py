@@ -142,6 +142,10 @@ class IndexView(generic.ListView):
             body = json.loads(response.read())
             # Load each of the bookings (movies, showtime and user)
             bookings = []
+            if body[u'data'] is None:
+                print 'Retrieved empty data from /bookings'
+                return None
+
             for b in body[u'data']:
                 bookings.append(get_booking(b[u'id']))
             # sort the bookings based on the date
