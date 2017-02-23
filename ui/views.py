@@ -6,6 +6,7 @@ from django.core.cache import cache
 import json
 import httplib
 import os
+import platform
 
 from .models import Movie, Booking, ShowTime, User
 
@@ -154,6 +155,13 @@ class IndexView(generic.ListView):
         else:
             print 'Error status code: {} loading /bookings'.format(status)
             return None
+
+    def get_context_data(self, **kwargs):
+        # Call the base implementation first to get a context
+        context = super(IndexView, self).get_context_data(**kwargs)
+        # Add in the publisher
+        context['hostname'] = platform.node()
+        return context
 
 class UserView(generic.DetailView):
     context_object_name = 'user'
