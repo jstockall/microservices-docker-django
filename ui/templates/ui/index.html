@@ -4,12 +4,13 @@
 
 
 <div class="content">
-  <h3>Connected to {{ hostname }}</h3>
+  <h3>Cinema</h3>
+  <h4>Connected to {{ hostname }}</h4>
 
   {% if booking_list %}
       <ul>
       {% for booking in booking_list %}
-          <li><a href="/booking/{{ booking.id }}">{{ booking.showtime }}</a></li>
+          <li><a href="/booking/{{ booking.id }}">Booking {{ booking.showtime }}</a></li>
       {% endfor %}
       </ul>
   {% else %}
