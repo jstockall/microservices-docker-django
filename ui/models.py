@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 from django.utils.encoding import python_2_unicode_compatible
 from django.db import models
+import json
 
 @python_2_unicode_compatible
 class Booking():
@@ -37,3 +38,7 @@ class User():
     lastname = ""
     def __str__(self):
 		return u'{} {}'.format(self.name, self.lastname)
+    def __init__(self, dict):
+        self.id = dict[u'id']
+        self.name = dict[u'name']
+        self.lastname = dict[u'lastname']

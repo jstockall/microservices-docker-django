@@ -2,15 +2,53 @@
 
 <link rel="stylesheet" type="text/css" href="{% static 'ui/style.css' %}" />
 
+<div id="header">
+  <span>Cinema on {{ hostname }}</span>
+</div>
+<div id="menu">
+  <a href="/movies">Movies</a>
+  <a href="/showtimes">Showtimes</a>
+</div>
 
 <div class="content">
+  <span class="heading">Movie Details</span>
+	<div class="section">
+		<span class="title">{{ movie.title }}</span>
+		<span class="section-content">Directed by: {{ movie.director }}</span>
+		<span class="rating">{{ movie.rating }}</span>
+	</div>
 
-	<h1>Movie</h1>
-  <ul>
-  	<li>Id: {{ movie.id }}</li>
-  	<li>Title: {{ movie.title }}</li>
-  	<li>Director: {{ movie.director }}</li>
-  	<li>Rating: {{ movie.rating }}</li>
-	</ul>
-
+	<div class="section" id="showtimes">
+		<span class="title">Showtimes</span>
+		<span class="section-content">Booking a showtime</span>
+		{% if showtime_list %}
+		<form method="post" action="/booking/add/">
+			<table>
+				{% csrf_token %}
+				<tr>
+					<td>Showtime:</td>
+					<td>
+						<select name="showtime">
+							{% for showtime in showtime_list %}
+				  			<option value="{{ showtime.id }}">{{ showtime.date }}</option>
+							{% endfor %}
+						</select>
+					</td>
+				</tr>
+				<tr>
+					<td>First Name:</td>
+					<td><input type="text" name="firstname" /></td>
+				</tr>
+				<tr>
+					<td>Last Name:</td>
+					<td><input type="text" name="lastname" /></td>
+				</tr>
+			</table>
+			<input type="hidden" value="{{ movie.id }}" name="movie" />
+			<input type="submit" value="Book this showtime" />
+		</form>
+	  {% else %}
+	      <p>No showtimes are available.</p>
+	  {% endif %}
+	</div>
 </div>
