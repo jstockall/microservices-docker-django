@@ -2,6 +2,7 @@ version: '2'
 services:
   redis:
     image: redis
+    container_name: cinema-cache
   web:
     build:
         context: .
@@ -11,11 +12,11 @@ services:
     ports:
       - "8000:80"
     volumes:
-      - .:/code
+      - .:/code # This is needed to reload the django source without rebuilding
     depends_on:
       - redis
     environment:
-      DOMAIN_SUFFIX: .dev
+      DOMAIN_SUFFIX: .dev # Local hostnames have the .dev suffix for use with dnsmasq
     extra_hosts:
       # Set these to your docker host
       - "movies.dev:172.20.0.1"
