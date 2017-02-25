@@ -16,10 +16,6 @@ a {
 	width: 50%;
 }
 
-.navlink {
-	display:block;
-}
-
 div#header {
 	background: linear-gradient(to right,#333 0,#656565 50%,#333 100%);
 	height: 80px;
@@ -101,10 +97,6 @@ div.section span {
 	display: block;
 }
 
-div.section li {
-	list-style: none;
-}
-
 div.section a:active,
 div.section a:hover,
 div.section a:visited,
@@ -112,18 +104,35 @@ div.section a:link {
 	color: #1ec7ff;
 }
 
-a.movie-link {
+a.list-link {
+	display: block;
+	margin: 5px;
+}
+
+a.nav-link {
 	position: relative;
 	top: 80px;
 	left: 5px;
 }
 
-a.showtime-link {
-	display: block;
-	margin: 5px;
-}
-
 div#showtimes {
 	background: white;
 	margin: -30px auto;
+	height: 300px;
+}
+
+table#booking-form {
+	width: 400px;
+}
+
+table#booking-form td {
+	vertical-align: top;
+}
+
+table#booking-form select {
+	width: 180px;
+}
+
+table#booking-form input {
+	width: 180px;
 }

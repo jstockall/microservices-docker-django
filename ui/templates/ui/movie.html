@@ -2,6 +2,18 @@
 
 <link rel="stylesheet" type="text/css" href="{% static 'ui/style.css' %}" />
 
+<script type="text/javascript">
+	function toggleUser(item) {
+		if ("-- Create New User --" != item.value) {
+			document.getElementById("firstname").disabled = true;
+			document.getElementById("lastname").disabled = true;
+		} else {
+			document.getElementById("firstname").disabled = false;
+			document.getElementById("lastname").disabled = false;
+		}
+	}
+</script>
+
 <div id="header">
   <span>Cinema on {{ hostname }}</span>
 </div>
@@ -19,36 +31,45 @@
 	</div>
 
 	<div class="section" id="showtimes">
-		<span class="title">Showtimes</span>
-		<span class="section-content">Booking a showtime</span>
+		<span class="title">Book a showtime</span>
 		{% if showtime_list %}
-		<form method="post" action="/booking/add/">
-			<table>
+			<form method="post" action="/booking/add/">
+				<table id="booking-form">
+					<tr>
+						<td>Showtime:</td>
+						<td>
+							<select name="showtime" size="5">
+								{% for showtime in showtime_list %}
+					  			<option value="{{ showtime.id }}">{{ showtime.date }}</option>
+								{% endfor %}
+							</select>
+						</td>
+					</tr>
+					<tr>
+						<td>Select a user:</td>
+						<td>
+							<select name="user" size="5" onchange="toggleUser(this)">
+								{% for user in user_list %}
+					  			<option value="{{ user.id }}">{{ user.name }} {{ user.lastname }}</option>
+								{% endfor %}
+							</select>
+						</td>
+					</tr>
+					<tr>
+						<td>Enter first name:</td>
+						<td><input type="text" name="firstname" id="firstname" /></td>
+					</tr>
+					<tr>
+						<td>Enter last name:</td>
+						<td><input type="text" name="lastname" id="lastname" /></td>
+					</tr>
+				</table>
+				<input type="hidden" value="{{ movie.id }}" name="movie" />
+				<input type="submit" value="Book this showtime" id="booking-form-submit"/>
 				{% csrf_token %}
-				<tr>
-					<td>Showtime:</td>
-					<td>
-						<select name="showtime">
-							{% for showtime in showtime_list %}
-				  			<option value="{{ showtime.id }}">{{ showtime.date }}</option>
-							{% endfor %}
-						</select>
-					</td>
-				</tr>
-				<tr>
-					<td>First Name:</td>
-					<td><input type="text" name="firstname" /></td>
-				</tr>
-				<tr>
-					<td>Last Name:</td>
-					<td><input type="text" name="lastname" /></td>
-				</tr>
-			</table>
-			<input type="hidden" value="{{ movie.id }}" name="movie" />
-			<input type="submit" value="Book this showtime" />
-		</form>
+			</form>
 	  {% else %}
-	      <p>No showtimes are available.</p>
+	  	<p>No showtimes are available.</p>
 	  {% endif %}
 	</div>
 </div>

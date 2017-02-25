@@ -132,18 +132,12 @@ def get_showtime(id):
     return showtime
 
 def get_user(id):
-    user = User()
-    user.id = id
-
     # Load the user
     userJson = get_remote_data("users", id)
     if userJson is not None:
-        user.name = userJson[u'name']
-        user.lastname = userJson[u'lastname']
+        return User(userJson)
     else:
-        user.name = "Unable to load, see logs"
-
-    return user
+        raise ValueError("Unable to create user: " + id)
 
 def get_booking(id):
     booking = Booking()
@@ -268,36 +262,49 @@ class MovieView(generic.DetailView):
         # Call the base implementation first to get a context
         context = super(generic.DetailView, self).get_context_data(**kwargs)
 
-        # Retrieve all from the movies endpoint
+        # Retrieve all showtimes for the selected movie
         showtimes = get_remote_data_list("showtimes", "?movie=" + self.args[0])
 
+        # Retrieve all the users so we can build the booking form
+        users = get_remote_data_list("users", "")
+        new_user = {}
+        new_user[u'name'] = "-- Create New User --"
+        new_user[u'id'] = "-- Create New User --"
+        users.append(new_user)
+        users = sorted(users, key=lambda b: b[u'name'])
+
         context['showtime_list'] = showtimes
+        context['user_list'] = users
+        context['hostname'] = platform.node()
         return context
 
 def new_booking(request):
     if request.method == 'POST':
 
-        firstname = request.POST[u'firstname']
-        lastname = request.POST[u'lastname']
         showtimeId = request.POST[u'showtime']
+        userId = request.POST[u'user']
         movieId = request.POST[u'movie']
 
         # See if we have a user that matches
         user = None
+        if userId == u"-- Create New User --":
+            # Create a new user
+            post_data = {}
+            post_data[u'data'] = {}
+            post_data[u'data'][u'name'] = request.POST[u'firstname']
+            post_data[u'data'][u'lastname'] = request.POST[u'lastname']
 
-        # Create a new user
-        post_data = {}
-        post_data[u'data'] = {}
-        post_data[u'data'][u'name'] = firstname
-        post_data[u'data'][u'lastname'] = lastname
+            response = create_new("users", post_data)
+            if response is None:
+                raise ValueError('Unable to create user')
 
-        response = create_new("users", post_data)
-        if response is None:
-            return HttpResponse('<h1>Error creating user</h1>')
-
-        user = User(response)
+            user = User(response)
+        else:
+            # Load existing user
+            user = get_user(userId)
 
         # Create a booking
+        post_data = {}
         post_data[u'data'] = {}
         post_data[u'data'][u'userid'] = user.id
         post_data[u'data'][u'showtimeid'] = showtimeId
@@ -306,7 +313,7 @@ def new_booking(request):
 
         response = create_new("bookings", post_data)
         if response is None:
-            return HttpResponse('<h1>Error creating booking</h1>')
+            raise ValueError('Unable to create booking')
 
         booking = Booking()
         booking.id = response[u'id']

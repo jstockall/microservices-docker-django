@@ -2,19 +2,22 @@
 
 <link rel="stylesheet" type="text/css" href="{% static 'ui/style.css' %}" />
 
-<div class="content">
+<div id="header">
+  <span>Cinema on {{ hostname }}</span>
+</div>
+<div id="menu">
+  <a href="/movies">Movies</a>
+  <a href="/showtimes">Showtimes</a>
+</div>
 
-	<h1>Showtime</h1>
-  <ul>
-  	<li>Id: {{ showtime.id }}</li>
-  	<li>Date: {{ showtime.date }}</li>
-  	<li>Created On: {{ showtime.createdon }}</li>
-		<li>Movies:</li>
-		<ul>
+<div class="content">
+	<span class="heading">Showtime</span>
+  <div class="section">
+		<span class="title">{{ showtime.date }}</span>
+		<span class="section-content">Movie:
 		{% for movie in showtime.movies %}
-				<li><a href="/movie/{{ movie.id }}">{{ movie.title}} - {{movie.rating}}</a></li>
+				<a class="list-link" href="/movie/{{ movie.id }}">{{ movie.title}} - {{movie.rating}}</a>
 		{% endfor %}
-		</ul>
-	</ul>
+	</div>
 
 </div>
