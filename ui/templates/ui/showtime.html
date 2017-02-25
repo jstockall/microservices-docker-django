@@ -8,11 +8,12 @@
 <div id="menu">
   <a href="/movies">Movies</a>
   <a href="/showtimes">Showtimes</a>
+  <a href="/admin">Admin</a>
 </div>
 
 <div class="content">
 	<span class="heading">Showtime</span>
-  <div class="section">
+  <div class="section showtime-section">
 		<span class="title">{{ showtime.date }}</span>
 		<span class="section-content">Movie:
 		{% for movie in showtime.movies %}

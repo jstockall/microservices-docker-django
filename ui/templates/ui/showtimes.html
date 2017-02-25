@@ -8,13 +8,14 @@
 <div id="menu">
   <a href="/movies">Movies</a>
   <a class="selected" href="/showtimes">Showtimes</a>
+  <a href="/admin">Admin</a>
 </div>
 
 <div class="content">
   <span class="heading">Movie Showtimes</span>
   {% if showtime_list %}
       {% for showtime in showtime_list %}
-        <div class="section">
+        <div class="section showtime-section">
           <span class="title">{{ showtime.date }}</span>
           {% for movie in showtime.movies %}
               <a class="list-link" href="/movie/{{ movie.id }}">{{ movie.title}} - {{movie.rating}}</a>

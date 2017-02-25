@@ -8,18 +8,16 @@
 <div id="menu">
   <a href="/movies">Movies</a>
   <a href="/showtimes">Showtimes</a>
+  <a href="/admin">Admin</a>
 </div>
 
 <div class="content">
   <span class="heading">Booking</span>
   <div class="section">
 		<span class="title">{{ booking.showtime }}</span>
-    <span class="section-content">User: {{ booking.user }}</span>
-    <span class="section-content">Movie:
-    {% for movie in booking.movies %}
-        <a href="/movie/{{ movie.id }}">{{ movie.title}} - {{movie.rating}}</a>
-    {% endfor %}
-    </span>
+    <span class="section-content">User: <a href="/user/{{ booking.user.id }}">{{ booking.user }}</a></span>
+    <span class="section-content">Movie: <a href="/movie/{{ booking.movie.id }}">{{ booking.movie.title }}</a></span>
+
     <a class="nav-link" href="/">Return to movie listings</a>
   </div>
 </div>

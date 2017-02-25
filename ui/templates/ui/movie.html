@@ -5,10 +5,10 @@
 <script type="text/javascript">
 	function toggleUser(item) {
 		if ("-- Create New User --" != item.value) {
-			document.getElementById("firstname").disabled = true;
+			document.getElementById("name").disabled = true;
 			document.getElementById("lastname").disabled = true;
 		} else {
-			document.getElementById("firstname").disabled = false;
+			document.getElementById("name").disabled = false;
 			document.getElementById("lastname").disabled = false;
 		}
 	}
@@ -20,21 +20,23 @@
 <div id="menu">
   <a href="/movies">Movies</a>
   <a href="/showtimes">Showtimes</a>
+  <a href="/admin">Admin</a>
 </div>
 
 <div class="content">
   <span class="heading">Movie Details</span>
-	<div class="section">
+
+	<div class="section movie-section">
 		<span class="title">{{ movie.title }}</span>
 		<span class="section-content">Directed by: {{ movie.director }}</span>
 		<span class="rating">{{ movie.rating }}</span>
 	</div>
 
-	<div class="section" id="showtimes">
+	<div class="section showtime-section" id="showtimes">
 		<span class="title">Book a showtime</span>
 		{% if showtime_list %}
 			<form method="post" action="/booking/add/">
-				<table id="booking-form">
+				<table class="input-form">
 					<tr>
 						<td>Showtime:</td>
 						<td>
@@ -55,9 +57,10 @@
 							</select>
 						</td>
 					</tr>
+					<tr><td colspan="2" class="or">OR</td></tr>
 					<tr>
 						<td>Enter first name:</td>
-						<td><input type="text" name="firstname" id="firstname" /></td>
+						<td><input type="text" name="name" id="name" /></td>
 					</tr>
 					<tr>
 						<td>Enter last name:</td>
@@ -65,11 +68,23 @@
 					</tr>
 				</table>
 				<input type="hidden" value="{{ movie.id }}" name="movie" />
-				<input type="submit" value="Book this showtime" id="booking-form-submit"/>
+				<div class="new-showtime-section">
+					<input type="submit" value="Book this showtime" id="booking-form-submit"/>
+				</div>
 				{% csrf_token %}
 			</form>
 	  {% else %}
-	  	<p>No showtimes are available.</p>
+	  	<span class="section-content">No showtimes are available.</span>
 	  {% endif %}
 	</div>
+
+	<div class="section user-section" id="bookings">
+		<span class="title">Other users</span>
+		{% if other_user_list %}
+			{% for user in other_user_list %}
+					<a class="list-link" href="/user/{{ user.id }}">{{ user.name}} {{ user.lastname }}</a>
+			{% endfor %}
+		{% else %}
+			<span class="section-content">No other users watching this moving at this time.</span>
+		{% endif %}
 </div>

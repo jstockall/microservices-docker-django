@@ -6,10 +6,10 @@ import json
 
 @python_2_unicode_compatible
 class Booking():
-    id = ""
-    user = ""
-    showtime = ""
-    movies = []
+    id = None
+    user = None
+    showtime = None
+    movie = None
     def __str__(self):
 		return self.showtime
 

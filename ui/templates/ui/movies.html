@@ -8,15 +8,16 @@
 <div id="menu">
   <a class="selected" href="/movies">Movies</a>
   <a href="/showtimes">Showtimes</a>
+  <a href="/admin">Admin</a>
 </div>
 
 <div class="content">
   <span class="heading">Movie Listings</span>
   {% if movie_list %}
       {% for movie in movie_list %}
-        <div class="section">
+        <div class="section movie-section">
           <span class="title">{{ movie.title }}</span>
-          <span class="director">Directed by: {{ movie.director }}</span>
+          <span class="section-content">Directed by: {{ movie.director }}</span>
           <span class="rating">{{ movie.rating }}</span>
           <a class="nav-link" href="/movie/{{ movie.id }}">Click here for Showtimes</a>
         </div>

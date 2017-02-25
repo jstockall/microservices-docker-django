@@ -13,7 +13,7 @@ a {
 
 .content {
 	margin: 0 auto 0 auto;
-	width: 50%;
+	width: 70%;
 }
 
 div#header {
@@ -43,7 +43,7 @@ span.heading {
 div#menu  {
 	height: 30px;
 	background-color: black;
-  text-align: center;
+	text-align: center;
 }
 
 div#menu a {
@@ -61,15 +61,35 @@ div#menu a.selected {
 }
 
 div.section {
-	width: 400px;
+	width: 500px;
 	height: 200px;
 	margin: 30 auto;
-	background: white url("reel.png") no-repeat 260px 55px;
+	background: white;
+}
+
+div.movie-section {
+	background: white url("reel.png") no-repeat 360px 55px;
+}
+
+div.showtime-section {
+	background: white url("clock.jpg") no-repeat 360px 55px;
+}
+
+div#showtimes {
+	height: 320px;
+}
+
+div.user-section {
+	background: white url("user.png") no-repeat 360px 55px;
+}
+
+div.new-showtime-section {
+	text-align: center;
 }
 
 span.title {
 	background-color: #1ec7ff;
-  background: linear-gradient(to bottom,#1ec7ff 0,#00bcff 50%,#00b8ff 100%);
+	background: linear-gradient(to bottom,#1ec7ff 0,#00bcff 50%,#00b8ff 100%);
 	height: 40px;
 	line-height: 40px;
 	vertical-align: middle;
@@ -115,24 +135,25 @@ a.nav-link {
 	left: 5px;
 }
 
-div#showtimes {
-	background: white;
-	margin: -30px auto;
-	height: 300px;
-}
-
-table#booking-form {
+table.input-form {
 	width: 400px;
 }
 
-table#booking-form td {
+table.input-form td {
 	vertical-align: top;
 }
 
-table#booking-form select {
+table.input-form td.or {
+	text-align: center;
+	font-weight: bold;
+	height: 40px;
+	vertical-align: middle;
+}
+
+table.input-form select {
 	width: 180px;
 }
 
-table#booking-form input {
+table.input-form input {
 	width: 180px;
 }
