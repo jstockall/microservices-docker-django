@@ -37,3 +37,9 @@ If you need change some source code you can deploy it typing:
 ```
 docker-compose build
 ```
+
+# Contains CC Licensed Icons from
+ * Eugene Pavovsky - http://www.flaticon.com/free-icon/clock_128312
+ * Enes Dal -
+  https://www.iconfinder.com/icons/392531/account_friend_human_man_member_person_profile_user_users_icon#size=128
+ * Eleonor Wang - http://www.flaticon.com/packs/flat-lines
