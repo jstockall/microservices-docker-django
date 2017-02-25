@@ -62,7 +62,7 @@ div#menu a.selected {
 
 div.section {
 	width: 500px;
-	height: 200px;
+	min-height: 200px;
 	margin: 30 auto;
 	background: white;
 }
@@ -76,6 +76,10 @@ div.showtime-section {
 }
 
 div#showtimes {
+	height: 320px;
+}
+
+div#add-movie {
 	height: 320px;
 }
 

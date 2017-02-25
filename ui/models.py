@@ -30,6 +30,16 @@ class ShowTime():
     movies = []
     def __str__(self):
 		return self.date
+    def tojson(self):
+        raw = {}
+        raw[u'id'] = self.id
+        raw[u'date'] = self.date
+        raw[u'createdon'] = self.createdon
+        raw[u'movies'] = []
+        for movie in self.movies:
+            raw[u'movies'].append(movie.id)
+        return raw
+
 
 @python_2_unicode_compatible
 class User():

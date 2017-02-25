@@ -56,7 +56,7 @@ def get_remote_data_list(model, query):
     # Check the cache first
     cached = cache.get(path)
     if cached is None:
-        print "Cache miss: ", path
+        print "Cache miss:", path
 
         # Connect to the specified endpoint
         conn = httplib.HTTPConnection(get_url(model))
@@ -73,6 +73,8 @@ def get_remote_data_list(model, query):
             body = json.loads(response.read())
             data = body[u'data']
             cache.set(path, data)
+
+            print "Returning:", data
             return data
         else:
             print 'Error status code: {} loading {} with id {}'.format(status, model, id)
@@ -83,7 +85,7 @@ def get_remote_data_list(model, query):
 
 def create_new(model, post_data):
     conn = httplib.HTTPConnection(get_url(model))
-    conn.request("POST", '/{}'.format(model), body=json.dumps(post_data), headers={'Content-Type':'application/json'})
+    conn.request("POST", '/{}'.format(model), body=json.dumps(post_data), headers={'Content-Type':'application/json','accept':'application/json'})
     response = conn.getresponse()
 
     # check that we either got a successful response (200)
@@ -93,6 +95,22 @@ def create_new(model, post_data):
         return body[u'data']
     else:
         print 'Error status code: {} creating new {}'.format(status, model)
+        return None
+
+def update(model, id, put_data):
+    print "Updating {} id {} with data {}".format(model, id, put_data)
+
+    conn = httplib.HTTPConnection(get_url(model))
+    conn.request("PUT", '/{}/{}'.format(model, id), body=json.dumps(put_data), headers={'Content-Type':'application/json','accept':'application/json'})
+    response = conn.getresponse()
+
+    # check that we either got a successful response (200)
+    status = response.status
+    if status == 200:
+        body = json.loads(response.read())
+        return body[u'data']
+    else:
+        print 'Error status code: {} updating {}'.format(status, model)
         return None
 
 def get_showtime(id):
@@ -244,6 +262,8 @@ def new_showtime(request):
             showtime.movies.append(get_movie(movie))
 
         cache.delete("/showtimes")
+        cache.delete_pattern("/showtimes?movie=*")
+        #cache.delete("/showtimes?movie=")
 
         return render(request, 'ui/showtime.html', {'showtime': showtime, 'hostname': platform.node()})
     else:
@@ -348,14 +368,14 @@ class MoviesView(generic.ListView):
     context_object_name = 'movie_list'
 
     def get_queryset(self):
-        # Retrieve all from the movies endpoint
+        #Retrieve all from the movies endpoint
         movieData = get_remote_data_list("movies", "")
+
+        print "MoviesView movieData=", movieData
 
         if movieData is None:
             print 'Retrieved empty data from /movies'
             return None
-
-        print "MoviesView movieData=", movieData
 
         movies = []
         for m in movieData:
@@ -367,7 +387,7 @@ class MoviesView(generic.ListView):
             movies.append(movie)
 
         # sort the movie based on the title
-        movies = sorted(movies, key=lambda b: b.title)
+        movies = sorted(movies, key=lambda b: b.rating, reverse=True)
         return movies
 
     def get_context_data(self, **kwargs):
@@ -381,6 +401,8 @@ class MoviesView(generic.ListView):
 
 def new_movie(request):
     if request.method == 'POST':
+
+        print "POST data", request.POST
 
         # Build a movie from the request.POST data
         post_data = {}
@@ -398,15 +420,23 @@ def new_movie(request):
         movie.title = response[u'title']
         movie.director = response[u'director']
         movie.rating = response[u'rating']
-        movie.showtimes = []
-        for showtime in response.get(u'showtimes', []):
-            movie.showtimes.append(get_showtime(showtime))
+        showtimes = request.POST.getlist(u'showtimes', [])
+        print "Request showtimes", showtimes
+        showtime_list = []
+        for showtime in showtimes:
+            showtime = get_showtime(showtime)
+            showtime.movies.append(movie)
+            print "Updating showtime", showtime.movies
+            data = {}
+            data[u'data'] = showtime.tojson()
+            update("showtimes", showtime.id, data)
+            showtime_list.append(showtime)
 
         # Invalidate the cache for changed items
         cache.delete("/movies")
         cache.delete("/showtimes")
 
-        return render(request, 'ui/movie.html', {'movie': movie, 'hostname': platform.node()})
+        return render(request, 'ui/movie.html', {'movie': movie, 'hostname': platform.node(), 'showtime_list': showtime_list})
     else:
         raise Exception('GET Method not supported on /movies/add')
 
