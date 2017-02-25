@@ -546,6 +546,7 @@ def new_booking(request):
 
         # Clear the cache
         cache.delete("/bookings")
+        cache.delete_pattern("/bookings?movie="+movieId)
 
         return render(request, 'ui/booking.html', {'booking': booking, 'hostname': platform.node()})
     else:
