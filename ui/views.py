@@ -72,6 +72,8 @@ def get_remote_data_list(model, query=""):
             # Return a dict out of the json response
             body = json.loads(response.read())
             data = body[u'data']
+            if data is None:
+                data = {}
             cache.set(path, data)
 
             print "Returning:", data
