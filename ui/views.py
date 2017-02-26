@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseServerError, HttpResponseRedirect
 from django.views import generic
 from django.core.cache import cache
 
@@ -85,9 +85,10 @@ def get_remote_data_list(model, query=""):
         print "Cache hit: ", path
         return cached
 
-def create_new(model, post_data):
+def create(model, post_data):
     conn = httplib.HTTPConnection(get_url(model))
-    conn.request("POST", '/{}'.format(model), body=json.dumps(post_data), headers={'Content-Type':'application/json','accept':'application/json'})
+    conn.request("POST", '/{}'.format(model), body=json.dumps(post_data),
+                        headers={'Content-Type':'application/json','accept':'application/json'})
     response = conn.getresponse()
 
     # check that we either got a successful response (200)
@@ -99,15 +100,15 @@ def create_new(model, post_data):
         print 'Error status code: {} creating new {}'.format(status, model)
         return None
 
-
 def update(model, id, put_data):
     print "Updating {} id {} with data {}".format(model, id, put_data)
 
     conn = httplib.HTTPConnection(get_url(model))
-    conn.request("PUT", '/{}/{}'.format(model, id), body=json.dumps(put_data), headers={'Content-Type':'application/json','accept':'application/json'})
+    conn.request("PUT", '/{}/{}'.format(model, id), body=json.dumps(put_data),
+                        headers={'Content-Type':'application/json','accept':'application/json'})
     response = conn.getresponse()
 
-    # check that we either got a successful response (200)
+    # check that we got a successful response (200)
     status = response.status
     if status == 200:
         body = json.loads(response.read())
@@ -116,49 +117,49 @@ def update(model, id, put_data):
         print 'Error status code: {} updating {}'.format(status, model)
         return None
 
+def delete(model, id):
+    print "Deleting {} id {}".format(model, id)
 
-def get_showtime(id):
-    showtime = ShowTime()
-    showtime.id = id
+    conn = httplib.HTTPConnection(get_url(model))
+    conn.request("DELETE", '/{}/{}'.format(model, id), headers={'Content-Type':'application/json','accept':'application/json'})
+    response = conn.getresponse()
 
-    # Load the showtime
-    showtimeJson = get_remote_data("showtimes", id)
-    if showtimeJson is not None:
-        showtime.date = showtimeJson[u'date']
-        showtime.createdon = showtimeJson[u'createdon']
+    # check that we got a successful response (200)
+    status = response.status
+    if status != 204:
+        print 'Error status code: {} deleting {}'.format(status, model)
 
-        # Load the movies
-        showtime.movies = get_movies(showtimeJson[u'movies'])
+def remove(request, model, delete_showtimes=False):
+    if request.method == 'POST':
+        print "remove_{}() request.POST {}".format(model, request.POST)
+
+        # Validate the POST data
+        models = model + "s"
+        to_remove = request.POST.getlist(models, [])
+        if len(to_remove) == 0:
+            return HttpResponseServerError("<h1>ERROR: {}s is empty</h1>".format(model));
+
+        # Remove each of the selected model objects
+        for tr in to_remove:
+            # delete any bookings for this objects
+            for booking in get_remote_data_list("bookings", "?{}id={}".format(model, tr)):
+                delete("bookings", booking[u'id'])
+            if delete_showtimes:
+                # Update any showtimes that referenced the movie
+                for showtime in get_remote_data_list("showtimes", "?movie={}".format(tr)):
+                    print "Existing showtime.movies to", showtime[u'movies']
+                    showtime[u'movies'].remove(tr)
+                    print "Updating showtime.movies to", showtime[u'movies']
+                    update("showtimes", showtime[u'id'], {u'data':showtime})
+            # delete the objects
+            delete(models, tr)
+
+        # Clear the cache and return to the admin page
+        cache.delete("/" + models)
+        return HttpResponseRedirect("/admin")
     else:
-        showtime.date = "Unable to load, see logs"
+        raise Exception("{} Method not supported on /{}/remove".format(request.method, model))
 
-    return showtime
-
-def get_user(id):
-    # Load the user
-    userJson = get_remote_data("users", id)
-    if userJson is not None:
-        return User(userJson)
-    else:
-        raise ValueError("Unable to retrieve user: " + id)
-
-def get_booking(id):
-    booking = Booking()
-    booking.id = id
-
-    # Load the booking
-    bookingJson = get_remote_data("bookings", id)
-
-    # Load the showtimes
-    booking.showtime = get_showtime(bookingJson[u'showtimeid'])
-
-    # Load the user
-    booking.user = get_user(bookingJson[u'userid'])
-
-    # Load the movies
-    booking.movie = get_movie(bookingJson[u'movieid'])
-
-    return booking
 
 #####################################
 #
@@ -212,14 +213,30 @@ class ShowtimesView(generic.ListView):
         context['hostname'] = platform.node()
         return context
 
-def new_showtime(request):
+def get_showtime(id):
+    # Load the showtime
+    data = get_remote_data("showtimes", id)
+    if data is not None:
+        # Build the showtime with id, date and created on from the response
+        showtime = ShowTime(data)
+        # Build the movies from the ids in the data
+        showtime.movies = get_movies(data[u'movies'])
+        return showtime
+
+    # Return a placeholder
+    return ShowTime({u'id':id, u'date':"Unable to load showtime with id " + id})
+
+def add_showtime(request):
     if request.method == 'POST':
-        print "new_showtime() request.POST", request.POST
+        print "add_showtime() request.POST", request.POST
+
+        # Validate the POST data
+        date = request.POST[u'date']
+        if len(date) == 0:
+            return HttpResponseServerError("<h1>ERROR: Date is required</h1>");
 
         # Construct a new showtime document
-        post_data = {}
-        post_data[u'data'] = {}
-        post_data[u'data'][u'date'] = request.POST[u'date']
+        post_data = {u'data': {u'date': date}}
 
         # Add the list of movie IDs to the showtime
         post_movies = request.POST.getlist(u'movies', [])
@@ -231,9 +248,9 @@ def new_showtime(request):
 
         print "new showtime",post_data
 
-        response = create_new("showtimes", post_data)
+        response = create("showtimes", post_data)
         if response is None:
-            raise Exception('Unable to create movie')
+            return HttpResponseServerError("Unable to create showtime<br>" + post_data)
 
         showtime = ShowTime(response)
         for movie in response.get(u'movies', []):
@@ -242,11 +259,12 @@ def new_showtime(request):
         cache.delete("/showtimes")
         cache.delete_pattern("/showtimes?movie=*")
 
-        return render(request, 'ui/showtime.html', {'showtime': showtime, 'hostname': platform.node()})
+        return render(request, 'ui/showtime.html', {'showtime':showtime, 'hostname':platform.node()})
     else:
-        raise Exception('GET Method not supported on /showtimes/add')
+        raise Exception(request.method + ' Method not supported on /showtime/add')
 
-
+def remove_showtime(request):
+    return remove(request, "showtime")
 
 #####################################
 #
@@ -277,20 +295,29 @@ class UserView(generic.DetailView):
         context['booking_list'] = booking_list
         return context
 
+def get_user(id):
+    # Load the user
+    data = get_remote_data("users", id)
+    if data is not None:
+        return User(data)
+
+    # Return a placeholder
+    return User({u'id':id, u'name':"Unable to load user with id", u'lastname':id})
+
+def does_user_exst(users, userid):
+    for u in users:
+        if u.id == userid:
+            return True
+    return False
+
+def remove_user(request):
+    return remove(request, "user")
 
 #####################################
 #
 # Movies
 #
 #####################################
-
-def does_user_exst(users, userid):
-    for u in users:
-        #print "Matching userid {} in {}".format(userid, users)
-        if u.id == userid:
-            return True
-    return False
-
 
 class MovieView(generic.DetailView):
     context_object_name = 'movie'
@@ -309,18 +336,16 @@ class MovieView(generic.DetailView):
         # Retrieve all the users so we can build the booking form
         users = get_remote_data_list("users")
 
-        new_user = {}
-        new_user[u'name'] = NEW_USER_ID
-        new_user[u'id'] = NEW_USER_ID
+        # Add an option to create a new user
+        new_user = {u'name':NEW_USER_ID, u'id':NEW_USER_ID}
         users.append(new_user)
         users = sorted(users, key=lambda b: b[u'name'])
 
         # Retrieve all the other users watching this booking
         other_users = []
         for b in get_remote_data_list("bookings", "?movie=" + self.args[0]):
-            userId = b[u'userid']
-            if not does_user_exst(other_users, userId):
-                other_users.append(get_user(userId))
+            if not does_user_exst(other_users, b[u'userid']):
+                other_users.append(get_user(b[u'userid']))
 
         print "MovieView.get_context_data(other_users={})".format(other_users)
 
@@ -353,31 +378,40 @@ class MoviesView(generic.ListView):
         return context
 
 
-def new_movie(request):
+def add_movie(request):
     if request.method == 'POST':
 
-        print "POST data", request.POST
+        print "new_movie POST data", request.POST
+
+        # Validate the POST data
+        if len(request.POST[u'title']) == 0:
+            return HttpResponseServerError("<h1>ERROR: Title is required</h1>");
+        if len(request.POST[u'director']) == 0:
+            return HttpResponseServerError("<h1>ERROR: Director is required</h1>");
+        if len(request.POST[u'rating']) == 0:
+            return HttpResponseServerError("<h1>ERROR: Rating is required</h1>");
 
         # Build a movie from the request.POST data
-        post_data = {}
-        post_data[u'data'] = {}
-        post_data[u'data'][u'title'] = request.POST[u'title']
-        post_data[u'data'][u'director'] = request.POST[u'director']
-        post_data[u'data'][u'rating'] = float(request.POST[u'rating'])
+        post_data = {u'data': {u'title':request.POST[u'title'],
+                               u'director':request.POST[u'director'],
+                               u'rating':float(request.POST['rating'])}}
 
-        response = create_new("movies", post_data)
+        response = create("movies", post_data)
         if response is None:
-            raise Exception('Unable to create movie')
+            return HttpResponseServerError("Unable to create movie<br>" + post_data)
 
+        # Build a movie object for the view
         movie = Movie(response)
-        showtimeIds = request.POST.getlist(u'showtimes', [])
 
         # For each showtime, update it's array of movies
-        print "Request showtimes", showtimes
+        # Build a list of showtimes for the view
+        showtimeIds = request.POST.getlist(u'showtimes', [])
+        print "Request showtime IDs", showtimeIds
         showtime_list = []
         for showtimeId in showtimeIds:
             showtime = get_showtime(showtimeId)
             showtime.movies.append(movie)
+
             print "Updating showtime.movies to", showtime.movies
             update("showtimes", showtime.id, {u'data':showtime.tojson()})
             showtime_list.append(showtime)
@@ -386,29 +420,28 @@ def new_movie(request):
         cache.delete("/movies")
         cache.delete("/showtimes")
 
-        return render(request, 'ui/movie.html', {'movie': movie, 'hostname': platform.node(), 'showtime_list': showtime_list})
+        return render(request, 'ui/movie.html', {u'movie':movie,
+                                                 u'hostname':platform.node(),
+                                                 u'showtime_list':showtime_list})
     else:
         raise Exception('GET Method not supported on /movies/add')
 
 def get_movie(id):
-    movie = None
+    data = get_remote_data("movies", id)
+    if data is not None:
+        return Movie(data)
 
-    movieJson = get_remote_data("movies", id)
-    if movieJson is not None:
-        movie = Movie(movieJson)
-    else:
-        movie = Movie({u'id':id})
-        movie.title = "Unable to load, see logs"
-
-    return movie
+    return Movie({u'id':id, u'title':"Unable to load movie with id " + id})
 
 def get_movies(movieIds):
-
     movies = []
-    # Load the movies
     for movieId in movieIds:
         movies.append(get_movie(movieId))
     return movies
+
+
+def remove_movie(request):
+    return remove(request, "movie", True)
 
 
 #####################################
@@ -433,61 +466,56 @@ class BookingView(generic.DetailView):
         context['hostname'] = platform.node()
         return context
 
-def new_booking(request):
+def add_booking(request):
     if request.method == 'POST':
 
-        # Read in the POST data
+        # Validate the POST data
+        if len(request.POST[u'showtime']) == 0:
+            return HttpResponseServerError("<h1>ERROR: Showtime not selected</h1>");
+
         showtimeId = request.POST[u'showtime']
         userId = request.POST.get(u'user', NEW_USER_ID)
         movieId = request.POST[u'movie']
 
-        print "new_booking request request.POST", request.POST
+        print "add_booking request request.POST", request.POST
 
         # Check for the special ID that indicates if we are creating a new user
         user = None
         if userId == NEW_USER_ID:
             # Build a http post based on the request
-            post_data = {}
-            post_data[u'data'] = {}
-            post_data[u'data'][u'name'] = request.POST[u'name']
-            post_data[u'data'][u'lastname'] = request.POST[u'lastname']
+            data = {u'data': {u'name': request.POST[u'name'],u'lastname': request.POST[u'lastname']}}
 
-            print "new_booking post_data", post_data
+            print "add_user new user=", data
 
             # Create the user on the users service
-            response = create_new("users", post_data)
+            response = create("users", data)
             if response is None:
                 raise ValueError('Unable to create user')
 
-            # Build a new user from the response
+            # Build a new user object from the response
             user = User(response)
 
-            print "Created new user from equest post data", user
+            print "Created new user", user
 
             # Clear the cache
             cache.delete("/users")
         else:
             # Load existing user
-            print "new_booking loading", userId
+            print "add_booking loading", userId
             user = get_user(userId)
 
         # Build a http post based on the request and the user
-        post_data = {}
-        post_data[u'data'] = {}
-        post_data[u'data'][u'userid'] = user.id
-        post_data[u'data'][u'showtimeid'] = showtimeId
-        post_data[u'data'][u'movieid'] = movieId
+        data = {u'data': {u'userid':user.id, u'showtimeid':showtimeId, u'movieid':movieId}}
 
-        print "new_booking posting {} to {}".format(post_data, "/bookings")
+        print "add_booking posting {} to {}".format(data, "/bookings")
 
         # Create the booking on the bookings service
-        response = create_new("bookings", post_data)
+        response = create("bookings", data)
         if response is None:
             raise ValueError('Unable to create booking')
 
         # Build a new booking from the response
-        booking = Booking()
-        booking.id = response[u'id']
+        booking = Booking(response[u'id'])
         booking.showtime = get_showtime(showtimeId)
         booking.user = user
         booking.movie = get_movie(movieId)
@@ -495,7 +523,25 @@ def new_booking(request):
         # Clear the cache
         cache.delete("/bookings")
         cache.delete_pattern("/bookings?movie="+movieId)
+        cache.delete_pattern("/bookings?user="+user.id)
 
-        return render(request, 'ui/booking.html', {'booking': booking, 'hostname': platform.node()})
+        return render(request, 'ui/booking.html', {'booking':booking, 'hostname':platform.node()})
     else:
         raise Exception('GET Method not supported on /bookings/add')
+
+def get_booking(id):
+    booking = Booking(id)
+
+    # Load the booking
+    data = get_remote_data("bookings", id)
+    if data is not None:
+        # Load the showtimes
+        booking.showtime = get_showtime(data[u'showtimeid'])
+
+        # Load the user
+        booking.user = get_user(data[u'userid'])
+
+        # Load the movie
+        booking.movie = get_movie(data[u'movieid'])
+
+    return booking

@@ -12,6 +12,7 @@
 </div>
 
 <div class="content">
+  <span class="heading">Site Administration</span>
   <div class="section movie-section" id="add-movie">
 		<span class="title">Add a movie</span>
     <form method="post" action="/movie/add/">
@@ -48,6 +49,30 @@
     </form>
   </div>
 
+  <div class="section movie-section" id="delete-movie">
+		<span class="title">Delete a movie</span>
+    <form method="post" action="/movie/remove/">
+      <table class="input-form">
+        <tr>
+          <td>Movies:</td>
+          <td>
+            {% if movie_list %}
+              <select name="movies" size="5" multiple="true">
+                {% for movie in movie_list %}
+                  <option value="{{ movie.id }}">{{ movie.title }}</option>
+                {% endfor %}
+              </select>
+            {% endif %}
+            </td>
+          </tr>
+      </table>
+      {% csrf_token %}
+      <div class="new-showtime-section">
+        <input type="submit" value="Delete Movie" id="movie-delete-submit"/>
+      </div>
+    </form>
+  </div>
+
   <div class="section showtime-section" id="add-showtime">
 		<span class="title">Add a showtime</span>
     <form method="post" action="/showtime/add/">
@@ -71,7 +96,31 @@
       </table>
       {% csrf_token %}
       <div class="new-showtime-section">
-        <input type="submit" value="Create Showtime" id="showtime-form-submit"/>
+        <input type="submit" value="Create Showtime" id="showtime-add-submit"/>
+      </div>
+    </form>
+  </div>
+
+  <div class="section showtime-section" id="delete-showtime">
+		<span class="title">Delete a showtime</span>
+    <form method="post" action="/showtime/remove/">
+      <table class="input-form">
+        <tr>
+          <td>Showtimes:</td>
+          <td>
+            {% if showtime_list %}
+            <select name="showtimes" size="5" multiple="true">
+              {% for showtime in showtime_list %}
+                <option value="{{ showtime.id }}">{{ showtime.date }}</option>
+              {% endfor %}
+            </select>
+            {% endif %}
+          </td>
+        </tr>
+      </table>
+      {% csrf_token %}
+      <div class="new-showtime-section">
+        <input type="submit" value="Delete Showtime" id="showtime-delete-submit"/>
       </div>
     </form>
   </div>
@@ -83,5 +132,29 @@
         <a class="list-link"  href="/user/{{ user.id }}">{{ user.name}} {{user.lastname}}</a>
       {% endfor %}
     {% endif %}
+  </div>
+
+  <div class="section user-section" id="user-showtime">
+		<span class="title">Delete a user</span>
+    <form method="post" action="/user/remove/">
+      <table class="input-form">
+        <tr>
+          <td>Users:</td>
+          <td>
+            {% if user_list %}
+            <select name="users" size="5" multiple="true">
+              {% for user in user_list %}
+                <option value="{{ user.id }}">{{ user.name}} {{user.lastname}}</option>
+              {% endfor %}
+            </select>
+            {% endif %}
+          </td>
+        </tr>
+      </table>
+      {% csrf_token %}
+      <div class="new-showtime-section">
+        <input type="submit" value="Delete User" id="user-delete-submit"/>
+      </div>
+    </form>
   </div>
 </div>

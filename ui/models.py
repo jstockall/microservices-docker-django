@@ -12,6 +12,8 @@ class Booking():
     movie = None
     def __str__(self):
 		return self.showtime
+    def __init__(self, id=None):
+        self.id = id
 
 @python_2_unicode_compatible
 class Movie():
@@ -40,11 +42,7 @@ class ShowTime():
         self.date = dict.get(u'date', "")
         self.createdon = dict.get(u'createdon', "")
     def tojson(self):
-        raw = {}
-        raw[u'id'] = self.id
-        raw[u'date'] = self.date
-        raw[u'createdon'] = self.createdon
-        raw[u'movies'] = []
+        raw = {u'id':self.id, u'date':self.date, u'createdon':self.createdon, u'movies':[]}
         for movie in self.movies:
             raw[u'movies'].append(movie.id)
         return raw
