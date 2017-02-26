@@ -38,8 +38,13 @@ If you need change some source code you can deploy it typing:
 docker-compose build
 ```
 
-# Contains CC Licensed Icons from
- * Eugene Pavovsky - http://www.flaticon.com/free-icon/clock_128312
- * Enes Dal -
-  https://www.iconfinder.com/icons/392531/account_friend_human_man_member_person_profile_user_users_icon#size=128
- * Eleonor Wang - http://www.flaticon.com/packs/flat-lines
+# Images
+ * Clock
+  * Icons made by Eugene Pavovsky - http://www.flaticon.com/authors/eugene-pavovsky
+  * from http://www.flaticon.com licensed by http://creativecommons.org/licenses/by/3.0/ Creative Commons BY 3.0
+ * User
+  * Icons made by Enes Dal - https://www.iconfinder.com/Enesdal
+  * from https://www.iconfinder.com licensed by http://creativecommons.org/licenses/by/3.0/ Creative Commons BY 3.0
+ * Film Reel
+  * Icons made by http://www.flaticon.com/authors/madebyoliver
+  * from http://www.flaticon.com licensed by http://creativecommons.org/licenses/by/3.0/ Creative Commons BY 3.0
