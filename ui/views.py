@@ -49,7 +49,7 @@ def get_remote_data(model, id):
         print "Cache hit: ", id
         return cached
 
-def get_remote_data_list(model, query):
+def get_remote_data_list(model, query=""):
     path = '/{}{}'.format(model, query)
     print "Path", path
 
@@ -78,7 +78,7 @@ def get_remote_data_list(model, query):
             return data
         else:
             print 'Error status code: {} loading {} with id {}'.format(status, model, id)
-            return None
+            return {}
     else:
         print "Cache hit: ", path
         return cached
@@ -97,6 +97,7 @@ def create_new(model, post_data):
         print 'Error status code: {} creating new {}'.format(status, model)
         return None
 
+
 def update(model, id, put_data):
     print "Updating {} id {} with data {}".format(model, id, put_data)
 
@@ -112,6 +113,7 @@ def update(model, id, put_data):
     else:
         print 'Error status code: {} updating {}'.format(status, model)
         return None
+
 
 def get_showtime(id):
     showtime = ShowTime()
@@ -141,7 +143,6 @@ def get_user(id):
 def get_booking(id):
     booking = Booking()
     booking.id = id
-    booking.movies = []
 
     # Load the booking
     bookingJson = get_remote_data("bookings", id)
@@ -166,25 +167,11 @@ def get_booking(id):
 
 def admin(request):
 
-    # Retrieve all showtimes
-    showtime_list = get_remote_data_list("showtimes", "")
-    if showtime_list is None:
-        showtime_list = {}
-
-    # Retrieve all movies
-    movie_list = get_remote_data_list("movies", "")
-    if movie_list is None:
-        movies_list = {}
-
-    # Retrieve all users
-    user_list = get_remote_data_list("users", "")
-    if user_list is None:
-        user_list = {}
-
+    # Retrieve all showtimes, movies and users
     return render(request, 'ui/admin.html', {
-        'showtime_list': showtime_list,
-        'movie_list': movie_list,
-        'user_list': user_list,
+        'showtime_list': get_remote_data_list("showtimes"),
+        'movie_list': get_remote_data_list("movies"),
+        'user_list': get_remote_data_list("users"),
         'hostname': platform.node()})
 
 #####################################
@@ -206,18 +193,9 @@ class ShowtimesView(generic.ListView):
 
     def get_queryset(self):
         # Retrieve all from the showtimes endpoint
-        showtimeData = get_remote_data_list("showtimes", "")
-
-        if showtimeData is None:
-            print 'Retrieved empty data from /showtimes'
-            return None
-
         showtimes = []
-        for s in showtimeData:
-            showtime = ShowTime()
-            showtime.id = s[u'id']
-            showtime.date = s[u'date']
-            showtime.createdon = s[u'createdon']
+        for s in get_remote_data_list("showtimes"):
+            showtime = ShowTime(s)
             showtime.movies = get_movies(s[u'movies'])
             showtimes.append(showtime)
 
@@ -236,34 +214,31 @@ def new_showtime(request):
     if request.method == 'POST':
         print "new_showtime() request.POST", request.POST
 
+        # Construct a new showtime document
         post_data = {}
         post_data[u'data'] = {}
         post_data[u'data'][u'date'] = request.POST[u'date']
 
-        # We get an array back from
+        # Add the list of movie IDs to the showtime
         post_movies = request.POST.getlist(u'movies', [])
-        print "post_movies",post_movies
+        print "movies from HTTP POST",post_movies
+
         post_data[u'data'][u'movies'] = []
         for m in post_movies:
             post_data[u'data'][u'movies'].append(m)
 
-        print "post_movies", "post_movies",
+        print "new showtime",post_data
 
         response = create_new("showtimes", post_data)
         if response is None:
             raise Exception('Unable to create movie')
 
-        showtime = Movie()
-        showtime.id = response[u'id']
-        showtime.date = response[u'date']
-        showtime.createdon = response[u'createdon']
-        showtime.movies = []
+        showtime = ShowTime(response)
         for movie in response.get(u'movies', []):
             showtime.movies.append(get_movie(movie))
 
         cache.delete("/showtimes")
         cache.delete_pattern("/showtimes?movie=*")
-        #cache.delete("/showtimes?movie=")
 
         return render(request, 'ui/showtime.html', {'showtime': showtime, 'hostname': platform.node()})
     else:
@@ -290,21 +265,15 @@ class UserView(generic.DetailView):
 
         # Retrieve all the bookings with this showtime and movie
         booking_list = []
-        bookings = get_remote_data_list("bookings", "")
-        if bookings is not None:
-            for b in bookings:
-                print "Booking:", b
-                if b[u'userid'] == self.args[0]:
-                    booking_list.append(get_booking(b[u'id']))
+        for b in get_remote_data_list("bookings", "?user=" + self.args[0]):
+            booking_list.append(get_booking(b[u'id']))
 
-        print "booking_list booking_list=",booking_list
+        print "UserView booking_list=",booking_list
 
         # Add in the publisher
         context['hostname'] = platform.node()
         context['booking_list'] = booking_list
         return context
-
-
 
 
 #####################################
@@ -336,9 +305,7 @@ class MovieView(generic.DetailView):
         showtimes = get_remote_data_list("showtimes", "?movie=" + self.args[0])
 
         # Retrieve all the users so we can build the booking form
-        users = get_remote_data_list("users", "")
-        if users is None:
-            users = []
+        users = get_remote_data_list("users")
 
         new_user = {}
         new_user[u'name'] = NEW_USER_ID
@@ -348,12 +315,10 @@ class MovieView(generic.DetailView):
 
         # Retrieve all the other users watching this booking
         other_users = []
-        bookings = get_remote_data_list("bookings", "?movie=" + self.args[0])
-        if bookings is not None:
-            for b in bookings:
-                userId = b[u'userid']
-                if not does_user_exst(other_users, userId):
-                    other_users.append(get_user(userId))
+        for b in get_remote_data_list("bookings", "?movie=" + self.args[0]):
+            userId = b[u'userid']
+            if not does_user_exst(other_users, userId):
+                other_users.append(get_user(userId))
 
         print "MovieView.get_context_data(other_users={})".format(other_users)
 
@@ -369,22 +334,9 @@ class MoviesView(generic.ListView):
 
     def get_queryset(self):
         #Retrieve all from the movies endpoint
-        movieData = get_remote_data_list("movies", "")
-
-        print "MoviesView movieData=", movieData
-
-        if movieData is None:
-            print 'Retrieved empty data from /movies'
-            return None
-
         movies = []
-        for m in movieData:
-            movie = Movie()
-            movie.id = m[u'id']
-            movie.title = m[u'title']
-            movie.director = m[u'director']
-            movie.rating = m[u'rating']
-            movies.append(movie)
+        for m in get_remote_data_list("movies"):
+            movies.append(Movie(m))
 
         # sort the movie based on the title
         movies = sorted(movies, key=lambda b: b.rating, reverse=True)
@@ -415,21 +367,17 @@ def new_movie(request):
         if response is None:
             raise Exception('Unable to create movie')
 
-        movie = Movie()
-        movie.id = response[u'id']
-        movie.title = response[u'title']
-        movie.director = response[u'director']
-        movie.rating = response[u'rating']
-        showtimes = request.POST.getlist(u'showtimes', [])
+        movie = Movie(response)
+        showtimeIds = request.POST.getlist(u'showtimes', [])
+
+        # For each showtime, update it's array of movies
         print "Request showtimes", showtimes
         showtime_list = []
-        for showtime in showtimes:
-            showtime = get_showtime(showtime)
+        for showtimeId in showtimeIds:
+            showtime = get_showtime(showtimeId)
             showtime.movies.append(movie)
-            print "Updating showtime", showtime.movies
-            data = {}
-            data[u'data'] = showtime.tojson()
-            update("showtimes", showtime.id, data)
+            print "Updating showtime.movies to", showtime.movies
+            update("showtimes", showtime.id, {u'data':showtime.tojson()})
             showtime_list.append(showtime)
 
         # Invalidate the cache for changed items
@@ -441,15 +389,13 @@ def new_movie(request):
         raise Exception('GET Method not supported on /movies/add')
 
 def get_movie(id):
-    movie = Movie()
-    movie.id = id
+    movie = None
 
     movieJson = get_remote_data("movies", id)
     if movieJson is not None:
-        movie.director = movieJson[u'director']
-        movie.title = movieJson[u'title']
-        movie.rating = movieJson[u'rating']
+        movie = Movie(movieJson)
     else:
+        movie = Movie({u'id':id})
         movie.title = "Unable to load, see logs"
 
     return movie

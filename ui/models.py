@@ -21,6 +21,11 @@ class Movie():
     rating = ""
     def __str__(self):
 		return self.title
+    def __init__(self, dict={}):
+        self.id = dict.get(u'id', "")
+        self.title = dict.get(u'title', "")
+        self.director = dict.get(u'director', "")
+        self.rating = dict.get(u'rating', -1)
 
 @python_2_unicode_compatible
 class ShowTime():
@@ -30,6 +35,10 @@ class ShowTime():
     movies = []
     def __str__(self):
 		return self.date
+    def __init__(self, dict={}):
+        self.id = dict.get(u'id', "")
+        self.date = dict.get(u'date', "")
+        self.createdon = dict.get(u'createdon', "")
     def tojson(self):
         raw = {}
         raw[u'id'] = self.id
