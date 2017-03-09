@@ -10,16 +10,17 @@ services:
     image: stockallj/cinema-ui
     container_name: cinema-ui
     ports:
-      - "8000:80"
+      - "80:80"
     volumes:
       - .:/code # This is needed to reload the django source without rebuilding
     depends_on:
       - redis
     environment:
-      DOMAIN_SUFFIX: .dev # Local hostnames have the .dev suffix for use with dnsmasq
+      # Local hostnames have the .dev suffix for use with dnsmasq
+      DOMAIN_SUFFIX: .dev
     extra_hosts:
-      # Set these to your docker host
-      - "movies.dev:172.20.0.1"
-      - "bookings.dev:172.20.0.1"
-      - "users.dev:172.20.0.1"
-      - "showtimes.dev:172.20.0.1"
+     # Set these to the IP of the docker host
+    - "movies.dev:172.19.0.1"
+    - "bookings.dev:172.19.0.1"
+    - "users.dev:172.19.0.1"
+    - "showtimes.dev:172.19.0.1"
