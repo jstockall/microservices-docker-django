@@ -1,3 +1,18 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: ui
+  namespace: cinema
+spec:
+  rules:
+  - host: cinema.example.com
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: ui
+          servicePort: 80
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -36,7 +51,7 @@ metadata:
   name: ui
   namespace: cinema
 spec:
-  replicas: 1
+  replicas: 2
   template:
     metadata:
       labels:
@@ -47,7 +62,13 @@ spec:
           image: stockallj/cinema-ui
           ports:
             - containerPort: 80
+          resources:
+            requests:
+              cpu: 0.2
         - name: redis
           image: redis
           ports:
             - containerPort: 6379
+          resources:
+            requests:
+              cpu: 200m
