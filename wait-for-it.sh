@@ -29,17 +29,26 @@ wait_for()
     else
         echoerr "$cmdname: waiting for $HOST:$PORT without a timeout"
     fi
+
     start_ts=$(date +%s)
     while :
     do
-        (echo > /dev/tcp/$HOST/$PORT) >/dev/null 2>&1
+        end_ts=$(date +%s)
+        if [[ $((end_ts - start_ts)) -gt 60 ]]; then
+            echoerr "Timeout after 60 seconds"
+            result=1
+            break
+        fi
+
+        (echo > python -c "import redis;r=redis.StrictRedis(host='$HOST',port=PORT,db=0);r.ping();") >/dev/null 2>&1
         result=$?
         if [[ $result -eq 0 ]]; then
-            end_ts=$(date +%s)
             echoerr "$cmdname: $HOST:$PORT is available after $((end_ts - start_ts)) seconds"
             break
         fi
-        sleep 1
+
+        echoerr "Sleeping for 5 seconds - total $((end_ts - start_ts))"
+        sleep 5
     done
     return $result
 }
