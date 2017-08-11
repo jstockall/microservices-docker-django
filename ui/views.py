@@ -567,14 +567,14 @@ def health(request):
     
     movieres = get_remote_data_response("movies")
     showtimesres = get_remote_data_response("showtimes")
-    bookingres = get_remote_data_response("booking")
-    userres = get_remote_data_response("user")
+    bookingres = get_remote_data_response("bookings")
+    userres = get_remote_data_response("users")
     
     data = {
         'movies' : movieres,
         'showtimes' : showtimesres,
-        'booking' : bookingres,
-        'user' : userres,
+        'bookings' : bookingres,
+        'users' : userres,
         'uptime' : current_milli_time()-START_TIME
     }
     
@@ -591,8 +591,7 @@ def get_remote_data_response(model, query=""):
         # Connect to the specified endpoint
         conn = httplib.HTTPConnection(get_url(model))
 
-        # Get a json response back
-        conn.request("GET", path, headers={'accept':'application/json'})
+        conn.request("GET", path)
         response = conn.getresponse()
 
         # check that we either got a successful response (200) or a previously retrieved,
