@@ -22,4 +22,6 @@ urlpatterns = [
     url(r'^user/remove/$', views.remove_user),
 
     url(r'^admin$', views.admin, name='admin'),
+	
+    url(r'^health$', views.health, name='health'),
 ]

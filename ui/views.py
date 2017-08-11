@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.http import HttpResponse, HttpResponseServerError, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseServerError, HttpResponseRedirect, JsonResponse
 from django.views import generic
 from django.core.cache import cache
 
@@ -8,10 +8,13 @@ import httplib
 import os
 import platform
 import datetime
+import time
 
 from .models import Movie, Booking, ShowTime, User
 
 NEW_USER_ID = u'-- Create New User --'
+current_milli_time = lambda: int(round(time.time() * 1000))
+START_TIME = current_milli_time()
 
 def get_url(model):
     suffix = os.environ.get('DOMAIN_SUFFIX')
@@ -57,17 +60,23 @@ def get_remote_data_list(model, query=""):
     cached = cache.get(path)
     if cached is None:
         print "Cache miss:", path
+        
+        status = 404
+        
+        try:
+            # Connect to the specified endpoint
+            conn = httplib.HTTPConnection(get_url(model))
 
-        # Connect to the specified endpoint
-        conn = httplib.HTTPConnection(get_url(model))
+            # Get a json response back
+            conn.request("GET", path, headers={'accept':'application/json'})
+            response = conn.getresponse()
 
-        # Get a json response back
-        conn.request("GET", path, headers={'accept':'application/json'})
-        response = conn.getresponse()
+            # check that we either got a successful response (200) or a previously retrieved,
+            # but still valid response (304)
+            status = response.status
+        except Exception as e:
+            print '%s (%s)' % (e.message, type(e))
 
-        # check that we either got a successful response (200) or a previously retrieved,
-        # but still valid response (304)
-        status = response.status
         if status == 200 or status == 304:
             # Return a dict out of the json response
             body = json.loads(response.read())
@@ -545,3 +554,50 @@ def get_booking(id):
         booking.movie = get_movie(data[u'movieid'])
 
     return booking
+
+#####################################
+#
+# Health
+#
+#####################################
+
+
+def health(request):
+    # Retrieve health of the service
+    
+    movieres = get_remote_data_response("movies")
+    showtimesres = get_remote_data_response("showtimes")
+    bookingres = get_remote_data_response("booking")
+    userres = get_remote_data_response("user")
+    
+    data = {
+        'movies' : movieres,
+        'showtimes' : showtimesres,
+        'booking' : bookingres,
+        'user' : userres,
+        'uptime' : current_milli_time()-START_TIME
+    }
+    
+    if ( movieres != 200 and showtimesres != 200 and bookingres != 200 and userres !=200):
+        return JsonResponse(data, status=500)
+    
+    return JsonResponse(data)
+
+def get_remote_data_response(model, query=""):
+    path = '/{}{}'.format(model, query)
+    print "Path", path
+
+    try:
+        # Connect to the specified endpoint
+        conn = httplib.HTTPConnection(get_url(model))
+
+        # Get a json response back
+        conn.request("GET", path, headers={'accept':'application/json'})
+        response = conn.getresponse()
+
+        # check that we either got a successful response (200) or a previously retrieved,
+        # but still valid response (304)
+        return response.status
+    except Exception as e:
+        print '%s (%s)' % (e.message, type(e))
+        return 404

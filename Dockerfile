@@ -1,5 +1,5 @@
 FROM python:2.7
-CMD ["./wait-for-it.sh", "redis$DOMAIN_SUFFIX:6379", "--", "python", "manage.py", "runserver", "0.0.0.0:80" ]
+CMD ["bash", "./wait-for-it.sh", "redis:6379", "--", "python", "manage.py", "runserver", "0.0.0.0:80" ]
 ENV PYTHONUNBUFFERED 1
 RUN mkdir /code
 WORKDIR /code
