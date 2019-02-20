@@ -16,19 +16,21 @@ NEW_USER_ID = u'-- Create New User --'
 current_milli_time = lambda: int(round(time.time() * 1000))
 START_TIME = current_milli_time()
 
+USE_CACHE = os.environ.get('USE_CACHE')
+
 def get_url(model):
     suffix = os.environ.get('DOMAIN_SUFFIX')
     if suffix is None:
         suffix = ''
     url = '{}{}'.format(model, suffix)
-    print "Connecting to", url
+    print ("Connecting to {0}".format(url))
     return url
 
 def get_remote_data(model, id):
     # Check the cache first
-    cached = cache.get(id)
+    cached = cache.get(id) if USE_CACHE else None
     if cached is None:
-        print "Cache miss: ", id
+        print ("Cache miss: {0}".format(id))
 
         # Connect to the specified endpoint
         conn = httplib.HTTPConnection(get_url(model))
@@ -46,7 +48,7 @@ def get_remote_data(model, id):
             cache.set(id, data)
             return data
         else:
-            print 'Error status code: {} loading {} with id {}'.format(status, model, id)
+            print ('Error status code: {} loading {} with id {}'.format(status, model, id))
             return None
     else:
         print "Cache hit: ", id
@@ -54,15 +56,15 @@ def get_remote_data(model, id):
 
 def get_remote_data_list(model, query=""):
     path = '/{}{}'.format(model, query)
-    print "Path", path
+    print ("Path {}".format(path))
 
     # Check the cache first
-    cached = cache.get(path)
+    cached = cache.get(path) if USE_CACHE else None
     if cached is None:
-        print "Cache miss:", path
-        
+        print ("Cache miss: {0}".format(path))
+
         status = 404
-        
+
         try:
             # Connect to the specified endpoint
             conn = httplib.HTTPConnection(get_url(model))
@@ -75,7 +77,7 @@ def get_remote_data_list(model, query=""):
             # but still valid response (304)
             status = response.status
         except Exception as e:
-            print '%s (%s)' % (e.message, type(e))
+            print ("{0} ({1})".format(e.message, type(e))
 
         if status == 200 or status == 304:
             # Return a dict out of the json response
@@ -85,13 +87,13 @@ def get_remote_data_list(model, query=""):
                 data = {}
             cache.set(path, data)
 
-            print "Returning:", data
+            print ("Returning: {}".format(data))
             return data
         else:
-            print 'Error status code: {} loading {} with id {}'.format(status, model, id)
+            print ('Error status code: {} loading {} with id {}'.format(status, model, id))
             return {}
     else:
-        print "Cache hit: ", path
+        print ("Cache hit: {0}".format(path))
         return cached
 
 def create(model, post_data):
@@ -106,11 +108,11 @@ def create(model, post_data):
         body = json.loads(response.read())
         return body[u'data']
     else:
-        print 'Error status code: {} creating new {}'.format(status, model)
+        print ("Error status code: {} creating new {}".format(status, model))
         return None
 
 def update(model, id, put_data):
-    print "Updating {} id {} with data {}".format(model, id, put_data)
+    print ("Updating {} id {} with data {}".format(model, id, put_data))
 
     conn = httplib.HTTPConnection(get_url(model))
     conn.request("PUT", '/{}/{}'.format(model, id), body=json.dumps(put_data),
@@ -123,11 +125,11 @@ def update(model, id, put_data):
         body = json.loads(response.read())
         return body[u'data']
     else:
-        print 'Error status code: {} updating {}'.format(status, model)
+        print "Error status code: {} updating {}".format(status, model))
         return None
 
 def delete(model, id):
-    print "Deleting {} id {}".format(model, id)
+    print ("Deleting {} id {}".format(model, id))
 
     conn = httplib.HTTPConnection(get_url(model))
     conn.request("DELETE", '/{}/{}'.format(model, id), headers={'Content-Type':'application/json','accept':'application/json'})
@@ -136,11 +138,11 @@ def delete(model, id):
     # check that we got a successful response (200)
     status = response.status
     if status != 204:
-        print 'Error status code: {} deleting {}'.format(status, model)
+        print ("Error status code: {} deleting {}".format(status, model))
 
 def remove(request, model, delete_showtimes=False):
     if request.method == 'POST':
-        print "remove_{}() request.POST {}".format(model, request.POST)
+        print ("remove_{}() request.POST {}".format(model, request.POST))
 
         # Validate the POST data
         models = model + "s"
@@ -156,9 +158,9 @@ def remove(request, model, delete_showtimes=False):
             if delete_showtimes:
                 # Update any showtimes that referenced the movie
                 for showtime in get_remote_data_list("showtimes", "?movie={}".format(tr)):
-                    print "Existing showtime.movies to", showtime[u'movies']
+                    print ("Existing showtime.movies to {}".format(showtime[u'movies']))
                     showtime[u'movies'].remove(tr)
-                    print "Updating showtime.movies to", showtime[u'movies']
+                    print ("Updating showtime.movies to {}".format(showtime[u'movies']))
                     update("showtimes", showtime[u'id'], {u'data':showtime})
             # delete the objects
             delete(models, tr)
@@ -237,7 +239,7 @@ def get_showtime(id):
 
 def add_showtime(request):
     if request.method == 'POST':
-        print "add_showtime() request.POST", request.POST
+        print ("add_showtime() request.POST".format(request.POST))
 
         # Validate the POST data
         date = request.POST[u'date']
@@ -249,7 +251,7 @@ def add_showtime(request):
 
         # Add the list of movie IDs to the showtime
         post_movies = request.POST.getlist(u'movies', [])
-        print "movies from HTTP POST",post_movies
+        print ("movies from HTTP POST {}").format(post_movies))
 
         post_data[u'data'][u'movies'] = []
         for m in post_movies:
@@ -356,7 +358,7 @@ class MovieView(generic.DetailView):
             if not does_user_exst(other_users, b[u'userid']):
                 other_users.append(get_user(b[u'userid']))
 
-        print "MovieView.get_context_data(other_users={})".format(other_users)
+        print ("MovieView.get_context_data(other_users={})".format(other_users))
 
         context['showtime_list'] = showtimes
         context['user_list'] = users
@@ -390,7 +392,7 @@ class MoviesView(generic.ListView):
 def add_movie(request):
     if request.method == 'POST':
 
-        print "new_movie POST data", request.POST
+        print ("new_movie POST data".format(request.POST))
 
         # Validate the POST data
         if len(request.POST[u'title']) == 0:
@@ -421,7 +423,7 @@ def add_movie(request):
             showtime = get_showtime(showtimeId)
             showtime.movies.append(movie)
 
-            print "Updating showtime.movies to", showtime.movies
+            print ("Updating showtime.movies to".format(showtime.movies))
             update("showtimes", showtime.id, {u'data':showtime.tojson()})
             showtime_list.append(showtime)
 
@@ -486,7 +488,7 @@ def add_booking(request):
         userId = request.POST.get(u'user', NEW_USER_ID)
         movieId = request.POST[u'movie']
 
-        print "add_booking request request.POST", request.POST
+        print ("add_booking request request.POST".format(request.POST))
 
         # Check for the special ID that indicates if we are creating a new user
         user = None
@@ -516,7 +518,7 @@ def add_booking(request):
         # Build a http post based on the request and the user
         data = {u'data': {u'userid':user.id, u'showtimeid':showtimeId, u'movieid':movieId}}
 
-        print "add_booking posting {} to {}".format(data, "/bookings")
+        print ("add_booking posting {} to {}".format(data, "/bookings")))
 
         # Create the booking on the bookings service
         response = create("bookings", data)
@@ -564,12 +566,12 @@ def get_booking(id):
 
 def health(request):
     # Retrieve health of the service
-    
+
     movieres = get_remote_data_response("movies")
     showtimesres = get_remote_data_response("showtimes")
     bookingres = get_remote_data_response("bookings")
     userres = get_remote_data_response("users")
-    
+
     data = {
         'movies' : movieres,
         'showtimes' : showtimesres,
@@ -577,14 +579,14 @@ def health(request):
         'users' : userres,
         'uptime' : current_milli_time()-START_TIME
     }
-    
+
     if ( movieres != 200 and showtimesres != 200 and bookingres != 200 and userres !=200):
         return JsonResponse(data, status=500)
-    
+
     return JsonResponse(data)
 
 def get_remote_data_response(model, query=""):
-    path = '/{}{}'.format(model, query)
+    path = ("/{}{}".format(model, query))
     print "Path", path
 
     try:
@@ -598,5 +600,5 @@ def get_remote_data_response(model, query=""):
         # but still valid response (304)
         return response.status
     except Exception as e:
-        print '%s (%s)' % (e.message, type(e))
+        print ("{} ({})".format(e.message, type(e))
         return 404
