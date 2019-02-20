@@ -48,4 +48,3 @@ docker-compose build
  * Film Reel
   * Icons made by http://www.flaticon.com/authors/madebyoliver
   * from http://www.flaticon.com licensed by http://creativecommons.org/licenses/by/3.0/ Creative Commons BY 3.0
-
