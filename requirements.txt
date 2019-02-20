@@ -1,4 +1,5 @@
 Django
+django-jenkins
 psycopg2
 redis
 django-redis
