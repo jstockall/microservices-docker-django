@@ -51,7 +51,7 @@ def get_remote_data(model, id):
             print ('Error status code: {} loading {} with id {}'.format(status, model, id))
             return None
     else:
-        print "Cache hit: ", id
+        print ("Cache hit: {} ".format(id))
         return cached
 
 def get_remote_data_list(model, query=""):
