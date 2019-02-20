@@ -1,4 +1,4 @@
-Django
+Django 1.11
 django-jenkins
 psycopg2
 redis
