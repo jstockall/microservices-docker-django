@@ -77,7 +77,7 @@ def get_remote_data_list(model, query=""):
             # but still valid response (304)
             status = response.status
         except Exception as e:
-            print ("{0} ({1})".format(e.message, type(e))
+            print ("{0} ({1})".format(e.message, type(e)))
 
         if status == 200 or status == 304:
             # Return a dict out of the json response
